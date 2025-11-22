@@ -1,0 +1,614 @@
+/* public/style.css */
+
+:root {
+    --primary-color: #007bff; /* Xanh dương hiện đại */
+    --warning-color: #f39c12; /* Vàng đậm hơn */
+    --danger-color: #e74c3c; /* Đỏ tươi hơn */
+    --map-bg-color: #f4f6f9; /* Nền xám nhạt */
+    --text-color: #343a40;
+    --border-color: #e0e0e0; /* Viền sáng hơn */
+    --shadow-color: rgba(0, 0, 0, 0.05);
+}
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Cấu trúc tổng thể và Sidebar Full Màn hình --- */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    /* Đảm bảo chiều cao chính xác, không dùng min-height nữa */
+    height: 100vh;
+    box-sizing: border-box;
+    background-color: var(--map-bg-color);
+    /* *** QUAN TRỌNG: Chỉ cho phép cuộn nội dung nếu nội dung bên trong tràn *** */
+    overflow: hidden; /* Ngăn cuộn trang tổng thể */
+}
+
+#main-content {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 15px;
+    /* *** QUAN TRỌNG: Cho phép cuộn dọc cho nội dung chính nếu cần *** */
+    /* Tuy nhiên, chúng ta sẽ để bản đồ co giãn, nên không cần cuộn ở đây */
+    overflow: hidden;
+}
+
+#sidebar-panel {
+    flex: 1;
+    min-width: 300px;
+    max-width: 350px;
+    padding: 25px;
+    background-color: var(--sidebar-bg-color);
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Sidebar được phép cuộn nội dung riêng */
+    box-sizing: border-box;
+}
+
+/* --- Tiêu đề và Trạng thái --- */
+#map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+}
+#map-title {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+#status {
+    font-size: 0.9em;
+    padding: 4px 10px;
+    border-radius: 20px; /* Hình viên thuốc */
+    background-color: #2ecc71; /* Xanh lá cây */
+    color: white;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* --- Khu vực Bản đồ --- */
+#map-area {
+    flex-grow: 1;
+    flex-shrink: 1;
+    position: relative;
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px; /* Bo góc map */
+    box-shadow: 0 4px 12px var(--shadow-color); /* Thêm bóng nhẹ */
+    overflow: hidden;
+}
+#map-header,
+#floor-control {
+    /* *** QUAN TRỌNG: Đảm bảo chúng không co giãn để chiều cao cố định *** */
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#map-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+#floor-plan {
+    width: 100%;
+    height: 100%;
+    /* *** CẢI THIỆN QUAN TRỌNG: Dùng 'fill' để hình ảnh lấp đầy khung chứa, 
+           loại bỏ khoảng trắng gây lệch tọa độ. *** */
+    object-fit: fill;
+}
+
+/* --- Marker Vị trí --- */
+.tracker-marker {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+    cursor: pointer;
+    transition: transform 0.3s ease-out; /* Thêm chuyển động mượt mà */
+}
+.tracker-marker:hover {
+    transform: scale(1.2);
+}
+.tracker-info {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+.tracker-marker:hover .tracker-info {
+    opacity: 1;
+}
+
+/* --- Nút Điều khiển Tầng --- */
+#floor-control {
+    padding: 10px 0;
+    /* *ĐẢM BẢO:* Không có height/max-height cố định */
+    flex-shrink: 0; /* Đảm bảo nó không bị co lại khi không gian hẹp */
+}
+.floor-btn {
+    border-radius: 6px;
+    border: none; /* Bỏ viền */
+    background-color: #eceff1; /* Xám nhạt hơn, tạo độ sâu */
+    color: var(--text-color);
+    padding: 10px 5px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.floor-btn:hover {
+    background-color: #bbb;
+}
+.floor-btn:hover:not(.active) {
+    background-color: #dbe3e7; /* Đậm hơn khi hover */
+}
+.floor-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3); /* Bóng đổ nổi bật */
+    transform: translateY(-1px); /* Hiệu ứng nhấn */
+}
+
+/* --- SIDEBAR: Danh sách khách --- */
+.sidebar-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #eee;
+}
+.guest-item {
+    padding: 15px 0px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    transition: background-color 0.2s, border-left 0.2s;
+    border-left: 5px solid transparent;
+}
+.guest-item:hover {
+    background-color: #eee;
+}
+.guest-item.highlighted {
+    background-color: #e6f7ff;
+    border-left: 5px solid var(--primary-color);
+}
+/* Highlight khi có cảnh báo */
+.guest-item.alert-active {
+    background-color: #fff3cd;
+    border-left: 5px solid var(--danger-color);
+}
+
+/* --- LỊCH SỬ DI CHUYỂN (History Panel) --- */
+#guest-history-panel {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.history-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+#history-content {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px;
+    font-size: 0.9em;
+}
+
+.history-item {
+    padding: 6px 0;
+    border-bottom: 1px dotted #eee;
+    color: var(--text-light-color);
+}
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.history-placeholder {
+    font-style: italic;
+    color: #999;
+}
+
+/* --- GEOFENCING: VẼ KHU VỰC CẤM --- */
+.forbidden-area-overlay {
+    position: absolute;
+    z-index: 2;
+    opacity: 0.5;
+    border: 2px dashed red;
+    pointer-events: none;
+}
+
+/* --- GEOFENCING: CẢNH BÁO TRÊN MARKER --- */
+.forbidden-alert {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    font-weight: bold;
+    white-space: nowrap;
+    z-index: 6;
+    animation: pulse 1s infinite;
+}
+
+.alert-intrusion {
+    background-color: var(--danger-color);
+    color: white;
+    border: 1px solid #a71d2a;
+}
+
+.alert-approaching {
+    background-color: #ffc107;
+    color: #333;
+    border: 1px solid #e0a800;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1) translateX(-50%);
+    }
+    50% {
+        transform: scale(1.05) translateX(-50%);
+    }
+    100% {
+        transform: scale(1) translateX(-50%);
+    }
+}
+/* Trong file public/style.css, thêm vào cuối */
+
+/* --- CẤU TRÚC CHUÔNG VÀ BỘ ĐẾM --- */
+#map-header {
+    /* Đảm bảo flexbox để chuông có thể căn chỉnh */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    position: relative; /* Quan trọng cho việc định vị chuông */
+}
+
+#alert-bell-container {
+    position: relative;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+#alert-bell-btn {
+    font-size: 1.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: transform 0.2s;
+    /* Hiệu ứng rung nhẹ khi có cảnh báo */
+    animation: bell-shake 2s infinite ease-in-out;
+    animation-play-state: paused; /* Tạm dừng, chỉ chạy khi có cảnh báo */
+}
+#alert-bell-btn.active {
+    animation-play-state: running;
+}
+
+#alert-counter {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background-color: var(--danger-color);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 50%;
+    z-index: 10;
+    border: 1px solid white;
+}
+.hidden {
+    display: none !important;
+}
+
+@keyframes bell-shake {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: rotate(10deg);
+    }
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: rotate(-10deg);
+    }
+}
+
+/* --- POPUP LỊCH SỬ CẢNH BÁO --- */
+#alert-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 650px; /* Độ rộng popup */
+    max-height: 80vh;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1000; /* Đảm bảo nổi lên trên mọi thứ */
+    display: flex;
+    flex-direction: column;
+}
+
+#alert-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    border-bottom: 1px solid #eee;
+}
+
+#close-popup-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+#alert-filter {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#alert-history-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+/* Trong file public/style.css */
+
+.alert-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.alert-history-table th,
+.alert-history-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.alert-history-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #333;
+    position: sticky; /* Giữ tiêu đề khi cuộn */
+    top: 0;
+}
+
+.alert-history-table tbody {
+    max-height: 400px; /* Chiều cao tối đa của nội dung cuộn */
+    overflow-y: auto;
+    display: block; /* Quan trọng để cuộn tbody */
+    width: 100%;
+}
+
+.alert-history-table thead,
+.alert-history-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.alert-history-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.alert-history-row:hover {
+    background-color: #e9ecef; /* Màu khi rê chuột */
+}
+
+/* Style cho loại cảnh báo */
+.alert-type-cell {
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: bold;
+    font-size: 11px;
+    display: inline-block;
+}
+
+.intrusion-type {
+    background-color: #dc3545; /* Đỏ */
+    color: white;
+}
+
+.approaching-type {
+    background-color: #ffc107; /* Vàng */
+    color: #333;
+}
+
+.tracker-id-small {
+    font-size: 10px;
+    color: #6c757d;
+}
+#guest-search-container {
+    padding: 10px 0;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 15px;
+}
+
+#guest-search-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box; /* Đảm bảo padding không làm tăng chiều rộng tổng thể */
+}
+
+/* Điều chỉnh lại style cho guest list (đảm bảo hiển thị sau khi tìm kiếm) */
+#guest-list {
+    flex-grow: 1; /* Cho phép danh sách khách chiếm phần còn lại của sidebar */
+    overflow-y: auto;
+    padding-right: 5px; /* Thêm padding để tránh thanh cuộn dính sát */
+}
+/* style.css (Thêm đoạn này vào cuối file) */
+
+/* --- MEDIA QUERY CHO MOBILE VÀ TABLET (Max-width: 992px) --- */
+@media (max-width: 992px) {
+    /* 1. Layout chính: Xếp chồng (Stack) */
+    body {
+        flex-direction: column; /* Chuyển Main và Sidebar xuống dòng */
+        min-height: auto;
+        overflow-y: auto; /* Cho phép cuộn trang tổng thể */
+        gap: 0;
+    }
+
+    #main-content,
+    #sidebar-panel {
+        flex: none; /* Bỏ quy tắc flex-grow */
+        width: 100%; /* Chiếm toàn bộ chiều rộng */
+        max-width: none;
+        min-width: 100%;
+        padding: 10px;
+    }
+
+    /* 2. Bản đồ: Cần có chiều cao cố định trên mobile */
+    #map-area {
+        height: 70vh; /* Chiếm 70% chiều cao màn hình (linh hoạt hơn 500px) */
+        min-height: 400px; /* Chiều cao tối thiểu */
+    }
+
+    /* 3. Header và Footer: Điều chỉnh để không bị tràn */
+    #map-header {
+        flex-wrap: wrap; /* Cho phép các thành phần xuống dòng nếu cần */
+        padding: 10px;
+        gap: 10px;
+        justify-content: space-between;
+    }
+
+    #floor-control {
+        flex-wrap: wrap; /* Cho phép các nút xuống dòng */
+        padding: 10px 0;
+    }
+    .floor-btn {
+        flex: 1 1 30%; /* Mỗi nút chiếm khoảng 30% chiều rộng để hiển thị 3 nút/hàng */
+        margin: 5px;
+        font-size: 14px;
+        padding: 8px 5px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color); /* Thêm viền */
+        background-color: transparent; /* Nền trong suốt khi không active */
+        color: var(--text-color);
+    }
+
+    /* 4. Sidebar: Đảm bảo cuộn tốt */
+    #sidebar-panel {
+        /* Bỏ quy tắc box-shadow để tránh lỗi trên mobile */
+        box-shadow: none;
+        border-top: 1px solid #ccc; /* Thêm đường viền phân tách */
+        height: auto;
+        min-height: auto;
+        max-height: 60vh; /* Giới hạn chiều cao khi sidebar ở dưới */
+    }
+
+    /* 5. Popup Cảnh báo: Tối ưu cho màn hình nhỏ */
+    #alert-popup {
+        width: 90%;
+        max-height: 90vh;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%); /* Căn giữa màn hình */
+    }
+
+    /* Đảm bảo bảng trong popup có thể cuộn ngang */
+    #alert-history-content {
+        overflow-x: auto;
+    }
+    .alert-history-table {
+        min-width: 600px; /* Đặt chiều rộng tối thiểu để bảng không bị nén */
+    }
+    .alert-history-table thead,
+    .alert-history-table tbody tr {
+        min-width: 600px;
+    }
+    .alert-history-table tbody {
+        max-height: 300px; /* Giảm chiều cao cuộn cho bảng */
+    }
+}
+/* Thêm vào cuối style.css */
+@keyframes pulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+    70% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+}
+
+.tracker-marker.active-pulse::after {
+    /* Dùng pseudo-element cho vòng sóng */
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--primary-color);
+    z-index: -1;
+    animation: pulse 1.5s infinite;
+}

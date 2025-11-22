@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tân Hiệp - Bản Đồ Theo Dõi Vị Trí Trực Tuyến</title>
+
+        <link rel="stylesheet" href="./styles/style.css" />
+
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"
+            type="text/javascript"
+        ></script>
+    </head>
+
+    <body>
+        <main id="main-content">
+            <header id="map-header">
+                <h1 id="map-title">Tầng 3</h1>
+                <div id="status">Đang tải...</div>
+
+                <div id="alert-bell-container">
+                    <span id="alert-counter" class="hidden">0</span>
+                    <button id="alert-bell-btn">🔔</button>
+                </div>
+            </header>
+            <div id="alert-popup" class="hidden">
+                <div id="alert-popup-header">
+                    Lịch Sử Cảnh Báo Geofencing
+                    <button id="close-popup-btn">X</button>
+                </div>
+
+                <div id="alert-filter" class="filter-section">
+                    <label for="alert-date-filter">Lọc theo ngày:</label>
+                    <input type="date" id="alert-date-filter" />
+                    <button id="clear-filter-btn">Xóa Lọc</button>
+                    <button onclick="onReloadClicked()">
+                        Tải lại cảnh báo
+                    </button>
+                </div>
+
+                <div id="alert-history-content"></div>
+            </div>
+            <section id="map-area">
+                <div id="map-container">
+                    <img
+                        id="floor-plan"
+                        src="./asset/floor_plan_3.png"
+                        alt="Sơ đồ mặt bằng"
+                    />
+                </div>
+            </section>
+
+            <footer id="floor-control">
+                <div>
+                    <button class="floor-btn active" data-floor="Tầng 3">
+                        Tầng 3
+                    </button>
+                    <button class="floor-btn" data-floor="Tầng 4">
+                        Tầng 4
+                    </button>
+                    <button class="floor-btn" data-floor="Tầng Trệt">
+                        Tầng Trệt
+                    </button>
+                </div>
+                <div>
+                    <button
+                        class="floor-btn"
+                        onclick="onChangeBeaconPageClicked()"
+                    >
+                        Khai báo beacon
+                    </button>
+                    <button
+                        class="floor-btn"
+                        onclick="onChangeTrackerPageClicked()"
+                    >
+                        Quản lý tracker
+                    </button>
+                </div>
+            </footer>
+        </main>
+
+        <aside id="sidebar-panel">
+            <div class="sidebar-title">Khách Vãng Lai Trực Tuyến</div>
+
+            <!-- THÊM Ô TÌM KIẾM MỚI -->
+            <div id="guest-search-container">
+                <input
+                    type="text"
+                    id="guest-search-input"
+                    placeholder="Tìm kiếm theo Tên, ID, Phòng..."
+                />
+            </div>
+            <!-- KẾT THÚC Ô TÌM KIẾM -->
+
+            <div id="guest-list">
+                <p>Đang chờ dữ liệu kết nối...</p>
+            </div>
+
+            <div id="guest-history-panel">
+                <div class="history-title">Lịch Sử Di Chuyển</div>
+                <div id="history-content">
+                    <p class="history-placeholder">
+                        Chọn một khách để xem lịch sử.
+                    </p>
+                </div>
+            </div>
+        </aside>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="./js/main.js"></script>
+        <script src="./js/socket.js"></script>
+    </body>
+</html>
