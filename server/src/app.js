@@ -6,6 +6,7 @@ const beaconRoutes = require('./routes/beacon.route');
 const alarmRoutes = require('./routes/alarm.route');
 const alarmAreaRoutes = require('./routes/alarmArea.route');
 const historyRoutes = require('./routes/history.route');
+const roomRoutes = require('./routes/room.route');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api', beaconRoutes);
 app.use('/api', alarmRoutes);
 app.use('/api', alarmAreaRoutes);
 app.use('/api', historyRoutes);
+app.use('/api', roomRoutes);
 
 // Error handling middleware
 app.use((error, req, res, next) => {

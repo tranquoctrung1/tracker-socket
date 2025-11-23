@@ -10,8 +10,8 @@ const LOCAL_STORAGE_KEY_COUNTER = 'geofenceAlertCounter'; // Bộ đếm vẫn l
 //const MAP_HEIGHT = 600;
 
 // Hằng số Tọa độ Max linh hoạt theo tầng (Đơn vị: mét)
-const WORLD_COORD_MAX_XY = 250.0;
-const WORLD_COORD_MAX_Y_TRET = 400.0;
+const WORLD_COORD_MAX_XY = 450.7;
+const WORLD_COORD_MAX_Y_TRET = 405.0;
 
 // Cấu hình Geofencing
 const WARNING_THRESHOLD_METERS = 5; // Cảnh báo sớm khi cách 5m
@@ -1013,4 +1013,8 @@ function onChangeBeaconPageClicked() {
 
 function onChangeTrackerPageClicked() {
     window.location.href = '/tracker.html';
+}
+
+function onChangeAlarmAreaPageClicked() {
+    window.location.href = '/alarmArea.html';
 }

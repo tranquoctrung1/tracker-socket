@@ -4,12 +4,15 @@ class BeaconManager {
     constructor() {
         this.currentEditId = null;
         this.beacons = [];
+        this.rooms = [];
         this.init();
     }
 
     init() {
         this.bindEvents();
         this.loadBeacons();
+        this.loadFloors();
+        this.loadRooms();
         this.loadFilters();
     }
 
@@ -45,16 +48,16 @@ class BeaconManager {
             this.clearSearch();
         });
 
-        // Filters
-        document
-            .getElementById('floorFilter')
-            .addEventListener('change', () => {
-                this.applyFilters();
-            });
+        // // Filters
+        // document
+        //     .getElementById('floorFilter')
+        //     .addEventListener('change', () => {
+        //         this.applyFilters();
+        //     });
 
-        document.getElementById('roomFilter').addEventListener('change', () => {
-            this.applyFilters();
-        });
+        // document.getElementById('roomFilter').addEventListener('change', () => {
+        //     this.applyFilters();
+        // });
 
         // Modal
         document
@@ -64,18 +67,53 @@ class BeaconManager {
             });
     }
 
+    async loadFloors() {
+        this.showLoading();
+        try {
+            document.getElementById('Floor').value = 'Tầng Trệt';
+            document.getElementById('Floor').setAttribute('disabled', true);
+
+            this.updateStatisticsFloor();
+        } catch (err) {
+            this.showError('Failed to load floors: ' + err.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async loadRooms() {
+        this.showLoading();
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/rooms/floor/${document.getElementById('Floor').value || 'Tầng Trệt'}`,
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+                this.rooms = data || [];
+                this.displayRoomSelect(this.rooms);
+                this.updateStatisticsRoom();
+            } else {
+                throw new Error(data.error || 'Failed to load beacons');
+            }
+        } catch (err) {
+            this.showError('Failed to load rooms: ' + err.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
     async loadBeacons() {
         this.showLoading();
         try {
             const response = await fetch(`${API_BASE_URL}/beacons`);
             const data = await response.json();
-            console.log(data);
 
             if (response.ok) {
                 this.beacons = data || [];
                 this.displayBeacons(this.beacons);
                 this.updateStatistics();
-                this.updateFilters();
+                //this.updateFilters();
             } else {
                 throw new Error(data.error || 'Failed to load beacons');
             }
@@ -84,6 +122,17 @@ class BeaconManager {
         } finally {
             this.hideLoading();
         }
+    }
+
+    displayRoomSelect(rooms) {
+        const select = document.getElementById('Room');
+        select.innerHTML = `<option value="">Chọn phòng</option>`;
+        rooms.forEach((room) => {
+            const option = document.createElement('option');
+            option.value = room.Name;
+            option.textContent = room.Name;
+            select.appendChild(option);
+        });
     }
 
     displayBeacons(beacons) {
@@ -126,14 +175,15 @@ class BeaconManager {
     }
 
     async handleFormSubmit() {
-        const formData = new FormData(document.getElementById('beaconForm'));
         const beaconData = {
-            beaconId: formData.get('beaconId'),
-            Floor: formData.get('Floor'),
-            x: formData.get('x') || null,
-            y: formData.get('y') || null,
-            Room: formData.get('Room') || null,
+            beaconId: document.getElementById('beaconId').value,
+            Floor: document.getElementById('Floor').value,
+            x: document.getElementById('x').value || null,
+            y: document.getElementById('y').value || null,
+            Room: document.getElementById('Room').value || null,
         };
+
+        console.log(beaconData);
 
         // Validation
         if (!beaconData.beaconId || !beaconData.Floor) {
@@ -198,9 +248,9 @@ class BeaconManager {
         // Change form to edit mode
         this.currentEditId = beaconId;
         document.querySelector('.form-section h2').innerHTML =
-            '<i class="fas fa-edit"></i> Edit Beacon';
+            '<i class="fas fa-edit"></i> Cập nhật';
         document.querySelector('button[type="submit"]').innerHTML =
-            '<i class="fas fa-save"></i> Update Beacon';
+            '<i class="fas fa-save"></i> Cập nhật';
         document.getElementById('cancelEdit').style.display = 'inline-flex';
 
         // Scroll to form
@@ -217,9 +267,9 @@ class BeaconManager {
         document.getElementById('beaconForm').reset();
         this.currentEditId = null;
         document.querySelector('.form-section h2').innerHTML =
-            '<i class="fas fa-plus-circle"></i> Add New Beacon';
+            '<i class="fas fa-plus-circle"></i> Thêm mới';
         document.querySelector('button[type="submit"]').innerHTML =
-            '<i class="fas fa-save"></i> Add Beacon';
+            '<i class="fas fa-save"></i> Thêm mới';
         document.getElementById('cancelEdit').style.display = 'none';
     }
 
@@ -289,26 +339,26 @@ class BeaconManager {
         this.loadBeacons();
     }
 
-    applyFilters() {
-        const floorFilter = document.getElementById('floorFilter').value;
-        const roomFilter = document.getElementById('roomFilter').value;
+    // applyFilters() {
+    //     const floorFilter = document.getElementById('floorFilter').value;
+    //     const roomFilter = document.getElementById('roomFilter').value;
 
-        let filteredBeacons = this.beacons;
+    //     let filteredBeacons = this.beacons;
 
-        if (floorFilter) {
-            filteredBeacons = filteredBeacons.filter(
-                (beacon) => beacon.Floor === floorFilter,
-            );
-        }
+    //     if (floorFilter) {
+    //         filteredBeacons = filteredBeacons.filter(
+    //             (beacon) => beacon.Floor === floorFilter,
+    //         );
+    //     }
 
-        if (roomFilter) {
-            filteredBeacons = filteredBeacons.filter(
-                (beacon) => beacon.Room === roomFilter,
-            );
-        }
+    //     if (roomFilter) {
+    //         filteredBeacons = filteredBeacons.filter(
+    //             (beacon) => beacon.Room === roomFilter,
+    //         );
+    //     }
 
-        this.displayBeacons(filteredBeacons);
-    }
+    //     this.displayBeacons(filteredBeacons);
+    // }
 
     updateFilters() {
         const floors = [
@@ -318,48 +368,54 @@ class BeaconManager {
             ...new Set(this.beacons.map((b) => b.Room).filter(Boolean)),
         ];
 
-        const floorFilter = document.getElementById('floorFilter');
-        const roomFilter = document.getElementById('roomFilter');
+        // const floorFilter = document.getElementById('floorFilter');
+        // const roomFilter = document.getElementById('roomFilter');
 
-        // Update floor filter
-        floorFilter.innerHTML =
-            '<option value="">All Floors</option>' +
-            floors
-                .map(
-                    (floor) =>
-                        `<option value="${this.escapeHtml(
-                            floor,
-                        )}">${this.escapeHtml(floor)}</option>`,
-                )
-                .join('');
+        // // Update floor filter
+        // floorFilter.innerHTML =
+        //     '<option value="">All Floors</option>' +
+        //     floors
+        //         .map(
+        //             (floor) =>
+        //                 `<option value="${this.escapeHtml(
+        //                     floor,
+        //                 )}">${this.escapeHtml(floor)}</option>`,
+        //         )
+        //         .join('');
 
-        // Update room filter
-        roomFilter.innerHTML =
-            '<option value="">All Rooms</option>' +
-            rooms
-                .map(
-                    (room) =>
-                        `<option value="${this.escapeHtml(
-                            room,
-                        )}">${this.escapeHtml(room)}</option>`,
-                )
-                .join('');
+        // // Update room filter
+        // roomFilter.innerHTML =
+        //     '<option value="">All Rooms</option>' +
+        //     rooms
+        //         .map(
+        //             (room) =>
+        //                 `<option value="${this.escapeHtml(
+        //                     room,
+        //                 )}">${this.escapeHtml(room)}</option>`,
+        //         )
+        //         .join('');
     }
 
     loadFilters() {
         // This will be populated when beacons are loaded
     }
 
+    updateStatisticsFloor() {
+        const totalFloors = 1;
+
+        document.getElementById('totalFloors').textContent = totalFloors;
+    }
+
+    updateStatisticsRoom() {
+        const totalRooms = this.rooms.length;
+
+        document.getElementById('totalRooms').textContent = totalRooms;
+    }
+
     updateStatistics() {
         const totalBeacons = this.beacons.length;
-        const totalFloors = new Set(this.beacons.map((b) => b.Floor)).size;
-        const totalRooms = new Set(
-            this.beacons.map((b) => b.Room).filter(Boolean),
-        ).size;
 
         document.getElementById('totalBeacons').textContent = totalBeacons;
-        document.getElementById('totalFloors').textContent = totalFloors;
-        document.getElementById('totalRooms').textContent = totalRooms;
     }
 
     showModal() {
@@ -473,4 +529,19 @@ function onChangeTrackerPageClicked() {
 
 function onChangeMainPageClicked() {
     window.location.href = '/index.html';
+}
+
+function onChangeAlarmAreaPageClicked() {
+    window.location.href = '/alarmArea.html';
+}
+
+function onRoomChange(selectElement) {
+    const selectedRoom = selectElement.value;
+
+    const find = beaconManager.rooms.find((el) => el.Name === selectedRoom);
+
+    if (find !== undefined) {
+        document.getElementById('x').value = find.x_min;
+        document.getElementById('y').value = find.y_min;
+    }
 }

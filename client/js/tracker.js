@@ -131,10 +131,8 @@ class TrackerManager {
                                 <button class="action-btn btn-danger" onclick="trackerManager.confirmUnlink('${
                                     user._id
                                 }', '${this.escapeHtml(
-                                          user.Name,
-                                      )}', '${this.escapeHtml(
-                                          tracker.TrackerId,
-                                      )}')">
+                                    user.Name,
+                                )}', '${this.escapeHtml(tracker.TrackerId)}')">
                                     <i class="fas fa-unlink"></i> Hủy liên kết
                                 </button>
                             `
@@ -201,9 +199,8 @@ class TrackerManager {
         this.userToUnlink = userId;
         this.trackerToUnlink = trackerId;
 
-        document.getElementById(
-            'unlinkMessage',
-        ).textContent = `Bạn có chắc chắn muốn hủy liên kết tracker "${trackerId}" khỏi người dùng "${userName}"?`;
+        document.getElementById('unlinkMessage').textContent =
+            `Bạn có chắc chắn muốn hủy liên kết tracker "${trackerId}" khỏi người dùng "${userName}"?`;
 
         this.showUnlinkModal();
     }
@@ -343,7 +340,7 @@ style.textContent = `
         from { transform: translateX(100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
-    
+
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
@@ -360,4 +357,8 @@ function onChangeBeaconPageClicked() {
 
 function onChangeMainPageClicked() {
     window.location.href = '/index.html';
+}
+
+function onChangeAlarmAreaPageClicked() {
+    window.location.href = '/alarmArea.html';
 }

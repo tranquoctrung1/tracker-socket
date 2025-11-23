@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Quản lý Khu vực Báo động</title>
+        <link rel="stylesheet" href="./styles/beacon.css" />
+        <link rel="stylesheet" href="./styles/alarmArea.css" />
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>
+                    <i class="fas fa-exclamation-triangle"></i> Quản lý Khu vực
+                    Báo động
+                </h1>
+                <p>Quản lý các khu vực báo động trong tòa nhà</p>
+            </header>
+
+            <!-- Form thêm/sửa alarm area -->
+            <div class="form-section">
+                <div class="df">
+                    <button
+                        class="btn btn-change"
+                        onclick="onChangeMainPageClicked()"
+                    >
+                        Trang chính
+                    </button>
+                    <button
+                        class="btn btn-change"
+                        onclick="onChangeTrackerPageClicked()"
+                    >
+                        Quản lý tracker
+                    </button>
+                    <button
+                        class="btn btn-change"
+                        onclick="onChangeBeaconPageClicked()"
+                    >
+                        Khai báo beacon
+                    </button>
+                </div>
+
+                <h2>
+                    <i class="fas fa-plus-circle"></i> Thêm Khu vực Báo động Mới
+                </h2>
+
+                <form id="alarmAreaForm" class="beacon-form">
+                    <div class="form-group">
+                        <label for="Name">Tên khu vực *</label>
+                        <input
+                            type="text"
+                            id="Name"
+                            name="Name"
+                            required
+                            placeholder="VD: Khu vực nguy hiểm A"
+                        />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Floor">Tầng *</label>
+                            <input
+                                type="text"
+                                id="Floor"
+                                name="Floor"
+                                required
+                                value="Tầng Trệt"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="color">Màu sắc</label>
+                            <input
+                                type="color"
+                                id="color"
+                                name="color"
+                                value="#FF0000"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Chọn phòng -->
+                    <div class="room-selector">
+                        <h3><i class="fas fa-door-open"></i> Chọn phòng</h3>
+                        <div class="form-group">
+                            <label for="roomSelect"
+                                >Chọn phòng để tự động điền tọa độ</label
+                            >
+                            <select id="roomSelect" class="form-control">
+                                <option value="">-- Chọn phòng --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Hiển thị tọa độ từ phòng -->
+                    <div
+                        id="roomCoordinates"
+                        class="coordinates-display"
+                        style="display: none"
+                    >
+                        <h4>
+                            <i class="fas fa-map-marker-alt"></i> Tọa độ từ
+                            phòng
+                        </h4>
+                        <div class="coordinate-item">
+                            <span class="coordinate-label">X min:</span>
+                            <span class="coordinate-value" id="roomXMin"
+                                >0</span
+                            >
+                        </div>
+                        <div class="coordinate-item">
+                            <span class="coordinate-label">Y min:</span>
+                            <span class="coordinate-value" id="roomYMin"
+                                >0</span
+                            >
+                        </div>
+                        <div class="coordinate-item">
+                            <span class="coordinate-label">X max:</span>
+                            <span class="coordinate-value" id="roomXMax"
+                                >0</span
+                            >
+                        </div>
+                        <div class="coordinate-item">
+                            <span class="coordinate-label">Y max:</span>
+                            <span class="coordinate-value" id="roomYMax"
+                                >0</span
+                            >
+                        </div>
+                        <div class="area-info">
+                            <strong
+                                >Diện tích: <span id="roomArea">0</span> đơn
+                                vị²</strong
+                            >
+                        </div>
+                        <button
+                            type="button"
+                            id="useRoomCoordinates"
+                            class="btn btn-success"
+                        >
+                            <i class="fas fa-check"></i> Sử dụng tọa độ này
+                        </button>
+                    </div>
+
+                    <!-- Nhập tọa độ thủ công -->
+                    <div class="manual-coordinates">
+                        <h3><i class="fas fa-edit"></i> Tọa độ thủ công</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="x_min">X min *</label>
+                                <input
+                                    type="number"
+                                    id="x_min"
+                                    name="x_min"
+                                    step="0.1"
+                                    required
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="y_min">Y min *</label>
+                                <input
+                                    type="number"
+                                    id="y_min"
+                                    name="y_min"
+                                    step="0.1"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="x_max">X max *</label>
+                                <input
+                                    type="number"
+                                    id="x_max"
+                                    name="x_max"
+                                    step="0.1"
+                                    required
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="y_max">Y max *</label>
+                                <input
+                                    type="number"
+                                    id="y_max"
+                                    name="y_max"
+                                    step="0.1"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div
+                            class="area-info"
+                            id="manualAreaInfo"
+                            style="display: none"
+                        >
+                            <strong
+                                >Diện tích: <span id="manualArea">0</span> đơn
+                                vị²</strong
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Thêm Khu vực
+                        </button>
+                        <button
+                            type="button"
+                            id="cancelEdit"
+                            class="btn btn-secondary"
+                            style="display: none"
+                        >
+                            <i class="fas fa-times"></i> Hủy chỉnh sửa
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tìm kiếm và bộ lọc -->
+            <div class="search-section">
+                <div class="search-container">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Tìm kiếm theo tên khu vực, tầng..."
+                    />
+                    <button id="searchBtn" class="btn btn-search">
+                        <i class="fas fa-search"></i> Tìm kiếm
+                    </button>
+                    <button id="clearSearch" class="btn btn-clear">
+                        <i class="fas fa-times"></i> Xóa
+                    </button>
+                </div>
+
+                <div class="filter-container">
+                    <select id="floorFilter">
+                        <option value="">Tất cả các tầng</option>
+                    </select>
+                    <select id="colorFilter">
+                        <option value="">Tất cả màu sắc</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Danh sách alarm areas -->
+            <div class="list-section">
+                <h2><i class="fas fa-list"></i> Danh sách Khu vực Báo động</h2>
+                <div class="table-container">
+                    <table id="alarmAreasTable">
+                        <thead>
+                            <tr>
+                                <th>Tên khu vực</th>
+                                <th>Tầng</th>
+                                <th>Tọa độ (Xmin,Ymin - Xmax,Ymax)</th>
+                                <th>Màu sắc</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alarmAreasTableBody">
+                            <!-- Dữ liệu sẽ được tải ở đây -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="loading" id="loading">Đang tải dữ liệu...</div>
+                <div class="no-data" id="noData" style="display: none">
+                    Không tìm thấy khu vực báo động nào
+                </div>
+            </div>
+
+            <!-- Thống kê -->
+            <div class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalAlarmAreas">0</h3>
+                        <p>Tổng Khu vực</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalFloors">0</h3>
+                        <p>Số Tầng</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal xác nhận xóa -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <h3>
+                    <i class="fas fa-exclamation-triangle"></i> Xác nhận xóa
+                </h3>
+                <p id="deleteMessage">
+                    Bạn có chắc chắn muốn xóa khu vực báo động này?
+                </p>
+                <div class="modal-actions">
+                    <button id="confirmDelete" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Xóa
+                    </button>
+                    <button id="cancelDelete" class="btn btn-secondary">
+                        Hủy bỏ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script src="./js/alarmArea.js"></script>
+    </body>
+</html>

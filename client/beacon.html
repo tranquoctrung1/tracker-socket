@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -31,6 +31,12 @@
                     >
                         Quản lý tracker
                     </button>
+                    <button
+                        class="btn btn-change"
+                        onclick="onChangeAlarmAreaPageClicked()"
+                    >
+                        Khai báo khu vực cánh báo
+                    </button>
                 </div>
                 <h2>
                     <i class="fas fa-plus-circle"></i> Thêm mới thiết bị beacon
@@ -56,6 +62,17 @@
                             />
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="Room">Phòng *</label>
+                            <select
+                                id="Room"
+                                name="Room"
+                                required
+                                onchange="onRoomChange(this)"
+                            ></select>
+                        </div>
+                    </div>
 
                     <div class="form-row">
                         <div class="form-group">
@@ -66,11 +83,6 @@
                             <label for="y">Tọa độ Y</label>
                             <input type="number" id="y" name="y" step="0.1" />
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="Room">Phòng</label>
-                        <input type="text" id="Room" name="Room" />
                     </div>
 
                     <div class="form-actions">
@@ -103,15 +115,6 @@
                     <button id="clearSearch" class="btn btn-clear">
                         <i class="fas fa-times"></i> Xóa hết
                     </button>
-                </div>
-
-                <div class="filter-container">
-                    <select id="floorFilter">
-                        <option value="">Tất cả các tầng</option>
-                    </select>
-                    <select id="roomFilter">
-                        <option value="">Tất cả các phòng</option>
-                    </select>
                 </div>
             </div>
 

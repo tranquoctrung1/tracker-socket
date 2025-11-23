@@ -90,6 +90,7 @@ select {
     background: white;
     font-size: 14px;
     min-width: 150px;
+    width: 100%;
 }
 
 .beacon-form {
