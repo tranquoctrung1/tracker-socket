@@ -14,19 +14,22 @@ class UserController {
             }
 
             // Check if user already exists
-            const existingUser = await userModel.findUserByCCCD(data.cccd);
+            const existingUser = await userModel.findUserByCCCD(data.CCCD);
             if (existingUser) {
-                return res.status(409).json({
-                    error: 'User with this email already exists',
+                await userModel.deleteUser(data.CCCD);
+                const result = await userModel.createUser(data);
+                res.status(200).json({
+                    message: 'User created successfully',
+                    userId: result.insertedId,
+                });
+            } else {
+                const result = await userModel.createUser(data);
+
+                res.status(200).json({
+                    message: 'User created successfully',
+                    userId: result.insertedId,
                 });
             }
-
-            const result = await userModel.createUser(data);
-
-            res.status(200).json({
-                message: 'User created successfully',
-                userId: result.insertedId,
-            });
         } catch (error) {
             console.error('Create user error:', error);
             res.status(500).json({

@@ -303,7 +303,7 @@ class MQTTClient extends EventEmitter {
                         // );
                         this.emit('message', { topic, data });
                     } catch (error) {
-                        console.error('Error processing MQTT message:', error);
+                        //console.error('Error processing MQTT message:', error);
                     }
                 });
 

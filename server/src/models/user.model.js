@@ -63,10 +63,10 @@ class UserModel {
         }
     }
 
-    async deleteUser(id) {
+    async deleteUser(cccd) {
         try {
             const collection = await this.getCollection();
-            const result = await collection.deleteOne({ _id: id });
+            const result = await collection.deleteOne({ CCCD: cccd });
             return result;
         } catch (error) {
             throw error;

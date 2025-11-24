@@ -18,7 +18,7 @@ class TrackerController {
 
             // Check if TrackerId already exists
             const existingTracker = await trackerModel.getTrackerByTrackerId(
-                TrackerId,
+                data.TrackerId,
             );
             if (existingTracker) {
                 return res.status(409).json({
@@ -27,15 +27,13 @@ class TrackerController {
             }
 
             const result = await trackerModel.createTracker({
-                TrackerId,
-                DeviceId,
+                TrackerId: data.TrackerId,
+                DeviceId: data.DeviceId,
             });
 
             res.status(200).json({
                 message: 'Tracker created successfully',
                 trackerId: result.insertedId,
-                TrackerId,
-                DeviceId,
             });
         } catch (error) {
             console.error('Create tracker error:', error);
