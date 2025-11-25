@@ -1,4 +1,3 @@
-const hostname = `http://localhost:3000/api`;
 let wsManager = null;
 
 // Cấu hình Lịch sử Vị trí và Cảnh báo
@@ -24,7 +23,7 @@ let count_alarm = 0;
 let currentUser = '';
 
 const liveLocations = {};
-let currentFloor = 'Tầng 3';
+let currentFloor = 'Tầng Trệt';
 const mapImageBaseName = './asset/floor_plan_';
 
 // Tham chiếu DOM
@@ -117,11 +116,11 @@ const updateDataTrackerAndUsers = () => {
                 room:
                     item.history.length > 0
                         ? item.history[item.history.length - 1].Location
-                        : 'Phòng họp',
+                        : 'Phòng bảo vệ',
                 floor:
                     item.history.length > 0
                         ? item.history[item.history.length - 1].Floor
-                        : 'Tầng 4',
+                        : 'Tầng Trệt',
                 x:
                     item.history.length > 0
                         ? item.history[item.history.length - 1].x
