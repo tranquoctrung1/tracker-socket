@@ -188,6 +188,8 @@ class MQTTClient extends EventEmitter {
                                                         Location: beacon.Room,
                                                         x: beacon.x + randomx,
                                                         y: beacon.y + randomy,
+                                                        // x: beacon.x,
+                                                        // y: beacon.y,
                                                     };
 
                                                     console.log(

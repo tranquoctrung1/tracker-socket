@@ -275,6 +275,8 @@ function updateMapMarker(data) {
     const pixelPos = toPixel(
         data.history[data.history.length - 1].x + randomx,
         data.history[data.history.length - 1].y + randomy,
+        // data.history[data.history.length - 1].x,
+        // data.history[data.history.length - 1].y,
     );
 
     if (!marker) {

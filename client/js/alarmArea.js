@@ -120,7 +120,7 @@ class AlarmAreaManager {
 
     async loadRooms() {
         try {
-            const response = await fetch(`${API_BASE_URL}/rooms`);
+            const response = await fetch(`${API_BASE_URL}/rooms/xymax`);
             const data = await response.json();
 
             if (response.ok) {

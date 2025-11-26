@@ -33,6 +33,23 @@ class RoomModel {
         }
     }
 
+    async getRoomHasXYMax() {
+        try {
+            const collection = await this.getCollection();
+            const rooms = await collection
+                .find({
+                    x_max: { $ne: null },
+                    y_max: { $ne: null },
+                    x_min: { $ne: null },
+                    y_min: { $ne: null },
+                })
+                .toArray();
+            return rooms;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async getRoomById(id) {
         try {
             const collection = await this.getCollection();

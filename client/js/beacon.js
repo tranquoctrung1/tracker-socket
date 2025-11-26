@@ -541,7 +541,7 @@ function onRoomChange(selectElement) {
     const find = beaconManager.rooms.find((el) => el.Name === selectedRoom);
 
     if (find !== undefined) {
-        document.getElementById('x').value = find.x_min;
-        document.getElementById('y').value = find.y_min;
+        document.getElementById('x').value = find.x;
+        document.getElementById('y').value = find.y;
     }
 }

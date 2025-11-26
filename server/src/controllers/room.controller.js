@@ -5,7 +5,7 @@ class RoomController {
     // Create a new room
     async createRoom(req, res) {
         try {
-            const { Name, Floor, x_min, y_min, x_max, y_max } = req.body;
+            const { Name, Floor, x_min, y_min, x_max, y_max, x, y } = req.body;
 
             // Validation
             if (!Name || !Floor) {
@@ -29,6 +29,8 @@ class RoomController {
                 y_min: y_min !== undefined ? parseFloat(y_min) : null,
                 x_max: x_max !== undefined ? parseFloat(x_max) : null,
                 y_max: y_max !== undefined ? parseFloat(y_max) : null,
+                x: x !== undefined ? parseFloat(x) : null,
+                y: y !== undefined ? parseFloat(y) : null,
             };
 
             const result = await roomModel.createRoom(roomData);
@@ -50,6 +52,20 @@ class RoomController {
     async getAllRooms(req, res) {
         try {
             const rooms = await roomModel.getAllRooms();
+
+            res.json(rooms);
+        } catch (error) {
+            console.error('Get rooms error:', error);
+            res.status(500).json({
+                error: 'Internal server error',
+            });
+        }
+    }
+
+    // Get rooms has xy max
+    async getRoomsHasXYMax(req, res) {
+        try {
+            const rooms = await roomModel.getRoomHasXYMax();
 
             res.json(rooms);
         } catch (error) {
@@ -206,7 +222,7 @@ class RoomController {
     async updateRoom(req, res) {
         try {
             const { id } = req.params;
-            const { Name, Floor, x_min, y_min, x_max, y_max } = req.body;
+            const { Name, Floor, x_min, y_min, x_max, y_max, x, y } = req.body;
 
             if (!ObjectId.isValid(id)) {
                 return res.status(400).json({
@@ -241,20 +257,8 @@ class RoomController {
             if (y_min !== undefined) updateData.y_min = parseFloat(y_min);
             if (x_max !== undefined) updateData.x_max = parseFloat(x_max);
             if (y_max !== undefined) updateData.y_max = parseFloat(y_max);
-
-            // Validate coordinates if all are provided
-            if (
-                x_min !== undefined &&
-                y_min !== undefined &&
-                x_max !== undefined &&
-                y_max !== undefined
-            ) {
-                if (x_min >= x_max || y_min >= y_max) {
-                    return res.status(400).json({
-                        error: 'x_min must be less than x_max and y_min must be less than y_max',
-                    });
-                }
-            }
+            if (x !== undefined) updateData.x = parseFloat(x);
+            if (y !== undefined) updateData.y = parseFloat(y);
 
             if (Object.keys(updateData).length === 0) {
                 return res.status(400).json({

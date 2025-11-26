@@ -6,6 +6,7 @@ const router = express.Router();
 // CRUD routes
 router.post('/rooms', roomController.createRoom);
 router.get('/rooms', roomController.getAllRooms);
+router.get('/rooms/xymax', roomController.getRoomsHasXYMax);
 router.get('/rooms/floor/:floor', roomController.getRoomsByFloor);
 router.get('/rooms/:id', roomController.getRoomById);
 router.put('/rooms/:id', roomController.updateRoom);
