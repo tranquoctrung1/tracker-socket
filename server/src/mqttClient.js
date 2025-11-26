@@ -28,19 +28,26 @@ class MQTTClient extends EventEmitter {
 
     connect() {
         return new Promise((resolve, reject) => {
-            try {
-                this.client = mqtt.connect(this.options.host, {
-                    port: this.options.port,
-                    username: this.options.username,
-                    password: this.options.password,
-                    clientId: this.options.clientId,
-                    clean: true,
-                    connectTimeout: 4000,
-                    reconnectPeriod: 1000,
-                });
+            const connectToBroker = () => {
+                console.log('🔌 Trying to connect MQTT...');
+
+                try {
+                    this.client = mqtt.connect(this.options.host, {
+                        port: this.options.port,
+                        username: this.options.username,
+                        password: this.options.password,
+                        clientId: this.options.clientId,
+                        clean: true,
+                        connectTimeout: 4000,
+                        reconnectPeriod: 0,
+                    });
+                } catch (err) {
+                    console.error('❌ MQTT connect() threw error:', err);
+                    return retryConnect();
+                }
 
                 this.client.on('connect', () => {
-                    console.log('✅ MQTT Connected to', this.options.host);
+                    console.log('✅ MQTT Connected!');
                     this.isConnected = true;
                     this.emit('connected');
                     resolve(this.client);
@@ -309,33 +316,51 @@ class MQTTClient extends EventEmitter {
                     }
                 });
 
-                this.client.on('error', (error) => {
-                    console.error('❌ MQTT Error:', error);
-                    this.emit('error', error);
-                    reject(error);
+                this.client.on('error', (err) => {
+                    console.error('❌ MQTT Error:', err.message);
+                    this.client.end(true);
+                    retryConnect();
                 });
 
                 this.client.on('close', () => {
                     console.log('🔌 MQTT Connection closed');
                     this.isConnected = false;
-                    this.emit('disconnected');
+                    retryConnect();
                 });
 
                 this.client.on('offline', () => {
-                    console.log('📴 MQTT Client offline');
+                    console.log('📴 MQTT offline');
                     this.isConnected = false;
-                    this.emit('offline');
                 });
 
                 this.client.on('reconnect', () => {
-                    console.log('🔄 MQTT Reconnecting...');
-                    this.emit('reconnecting');
+                    // We disable built-in reconnect, so ignore this
                 });
-            } catch (error) {
-                reject(error);
-            }
+            };
+
+            const retryConnect = () => {
+                console.log(
+                    `⏳ Retry MQTT in ${this.reconnectDelay / 1000} seconds...`,
+                );
+
+                setTimeout(() => {
+                    connectToBroker();
+                }, this.reconnectDelay);
+            };
+
+            connectToBroker();
         });
     }
+
+    retryConnect = () => {
+        console.log(
+            `⏳ Retry MQTT in ${this.reconnectDelay / 1000} seconds...`,
+        );
+
+        setTimeout(() => {
+            connectToBroker();
+        }, this.reconnectDelay);
+    };
 
     subscribe(topic, options = { qos: 0 }) {
         if (!this.isConnected) {
