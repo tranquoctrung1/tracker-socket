@@ -1,38 +1,59 @@
+// In your main server file (index.js/server.js)
 require('dotenv').config();
+const { fork } = require('child_process');
+const path = require('path');
 
 const app = require('./src/app');
 const database = require('./src/config/database');
-const mqttClient = require('./src/mqttClient');
-
-const socketManager = require('./src/socketManager');
+const socketManager = require('./src/socketManager'); // Updated manager
 
 const WebSocket = require('ws');
-
 const PORT = process.env.PORT || 3000;
 
-// Start server
+// Create MQTT worker
+const mqttWorker = fork(path.join(__dirname, './src/mqtt-worker.js'));
+
 async function startServer() {
     try {
-        // Connect to database first
         await database.connect();
 
-        // Start Express server
         const server = app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
 
-        // 2. Start WebSocket Server
+        // Start WebSocket Server
         const wss = new WebSocket.Server({ server });
 
-        // 3. VITAL: Attach 'wss' to the Express app so routes can access it
-        app.set('wss', wss);
-        app.set('mqttClient', mqttClient);
+        // Initialize socket manager with MQTT worker
+        socketManager.initialize(wss, mqttWorker);
 
-        mqttClient.connect().then((_) => {
-            mqttClient.subscribe(process.env.TOPIC);
+        // Store in app for routes
+        app.set('wss', wss);
+        app.set('mqttWorker', mqttWorker);
+        app.set('socketManager', socketManager);
+
+        // Handle messages from MQTT worker and forward to socket manager
+        mqttWorker.on('message', (msg) => {
+            socketManager.handleMqttMessage(msg);
         });
 
-        socketManager.initialize(wss);
+        // Restart worker if it crashes
+        mqttWorker.on('exit', (code) => {
+            console.log(`MQTT worker exited with code ${code}`);
+            socketManager.broadcast({
+                type: 'mqtt_status',
+                status: 'disconnected',
+                timestamp: new Date().toISOString(),
+            });
+        });
+
+        // Optional: Add REST endpoint to check MQTT status
+        app.get('/mqtt-status', (req, res) => {
+            res.json({
+                connected: mqttWorker.connected,
+                socketClients: socketManager.getClientCount(),
+            });
+        });
     } catch (error) {
         console.error('Failed to start server:', error);
         process.exit(1);
@@ -42,15 +63,17 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('\nReceived SIGINT. Shutting down gracefully...');
+
+    if (mqttWorker && mqttWorker.connected) {
+        mqttWorker.send({ type: 'disconnect' });
+    }
+
     await database.close();
-    process.exit(0);
+
+    setTimeout(() => {
+        console.log('Server shutdown complete');
+        process.exit(0);
+    }, 1000);
 });
 
-process.on('SIGTERM', async () => {
-    console.log('Received SIGTERM. Shutting down gracefully...');
-    await database.close();
-    process.exit(0);
-});
-
-// Start the application
 startServer();

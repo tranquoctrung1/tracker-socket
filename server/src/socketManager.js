@@ -1,14 +1,17 @@
-// websocketManager.js
+// socketManager.js
+const WebSocket = require('ws');
 const dataSocket = require('./dataSocket');
-//
+
 class WebSocketManager {
     constructor() {
         this.wss = null;
         this.clients = new Map(); // Store clients with IDs
+        this.mqttWorker = null; // Reference to MQTT worker process
     }
 
-    initialize(wss) {
+    initialize(wss, mqttWorker = null) {
         this.wss = wss;
+        this.mqttWorker = mqttWorker;
 
         this.wss.on('connection', async (ws) => {
             console.log('New WebSocket connection');
@@ -26,6 +29,17 @@ class WebSocketManager {
                     clientId,
                 }),
             );
+
+            // Send MQTT status if available
+            if (this.mqttWorker) {
+                ws.send(
+                    JSON.stringify({
+                        type: 'mqtt_status',
+                        status: 'connected',
+                        timestamp: new Date().toISOString(),
+                    }),
+                );
+            }
 
             ws.on('message', (data) => {
                 try {
@@ -48,6 +62,10 @@ class WebSocketManager {
         });
     }
 
+    setMqttWorker(mqttWorker) {
+        this.mqttWorker = mqttWorker;
+    }
+
     generateClientId() {
         return `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
@@ -63,6 +81,7 @@ class WebSocketManager {
                     timestamp: Date.now(),
                 });
                 break;
+
             case 'BROADCAST':
                 this.broadcast({
                     type: 'BROADCAST_MESSAGE',
@@ -70,8 +89,91 @@ class WebSocketManager {
                     data: message.data,
                 });
                 break;
+
+            case 'MQTT_PUBLISH':
+                // Forward MQTT publish request to worker
+                if (this.mqttWorker && this.mqttWorker.connected) {
+                    this.mqttWorker.send({
+                        type: 'publish',
+                        topic: message.topic,
+                        message: message.payload,
+                        options: message.options,
+                    });
+                    this.sendToClient(clientId, {
+                        type: 'MQTT_PUBLISH_ACK',
+                        success: true,
+                        messageId: message.messageId,
+                    });
+                } else {
+                    this.sendToClient(clientId, {
+                        type: 'MQTT_PUBLISH_ACK',
+                        success: false,
+                        error: 'MQTT not connected',
+                        messageId: message.messageId,
+                    });
+                }
+                break;
+
+            case 'MQTT_SUBSCRIBE':
+                // Forward subscribe request to worker
+                if (this.mqttWorker && this.mqttWorker.connected) {
+                    this.mqttWorker.send({
+                        type: 'subscribe',
+                        topic: message.topic,
+                        options: message.options,
+                    });
+                }
+                break;
+
             default:
                 console.log('Unknown message type:', message.type);
+        }
+    }
+
+    // Handle MQTT worker messages
+    handleMqttMessage(msg) {
+        switch (msg.type) {
+            case 'mqtt_connected':
+                this.broadcast({
+                    type: 'mqtt_status',
+                    status: 'connected',
+                    timestamp: new Date().toISOString(),
+                });
+                break;
+
+            case 'mqtt_disconnected':
+                this.broadcast({
+                    type: 'mqtt_status',
+                    status: 'disconnected',
+                    timestamp: new Date().toISOString(),
+                });
+                break;
+
+            case 'mqtt_message':
+                // Forward MQTT messages to all clients
+                this.broadcast({
+                    type: 'mqtt_data',
+                    topic: msg.topic,
+                    data: msg.data,
+                    timestamp: new Date().toISOString(),
+                });
+                break;
+
+            case 'history_created':
+                this.broadcast({
+                    type: 'DATA_UPDATE_HISTORY',
+                    message: msg.data,
+                    timestamp: new Date().toISOString(),
+                });
+                break;
+
+            case 'alarm_created':
+                this.broadcast({
+                    type: 'DATA_UPDATE_ALARM',
+                    message: msg.data,
+                    timestamp: new Date().toISOString(),
+                });
+                break;
         }
     }
 
@@ -100,12 +202,15 @@ class WebSocketManager {
 
     // Send to multiple clients
     sendToClients(message) {
+        if (!this.wss) return 0;
+
         const messageString = JSON.stringify(message);
         let sentCount = 0;
 
         this.wss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(messageString);
+                sentCount++;
             }
         });
 
