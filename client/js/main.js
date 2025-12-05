@@ -668,10 +668,11 @@ async function displayAlertHistory() {
         filterInput.value == undefined ||
         filterInput.value == null
     ) {
-        const now = new Date(Date.now());
-        filterInput.value = `${now.getFullYear()}-${
-            now.getMonth() + 1
-        }-${now.getDate()}`;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+        const day = String(today.getDate()).padStart(2, '0');
+        filterInput.value = `${year}-${month}-${day}`;
 
         filterDate = filterInput.value;
     }
