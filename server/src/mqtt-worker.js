@@ -29,7 +29,7 @@ class MQTTWorker {
                 process.env.MONGODB_URI || 'mongodb://localhost:27017',
             );
             await this.mongoClient.connect();
-            this.db = this.mongoClient.db();
+            this.db = this.mongoClient.db(process.env.DATABASE_NAME);
             console.log('✅ MQTT Worker connected to database');
         } catch (err) {
             console.error('❌ MQTT Worker database connection failed:', err);
@@ -100,20 +100,19 @@ class MQTTWorker {
             const deviceId = data.deviceInfo.devEui;
             const beaconId = data.object.ID;
 
-            if (beaconId && this.db) {
+            if (beaconId) {
                 // Get beacon
                 const beacon = await this.db
-                    .collection('beacons')
+                    .collection('beacon')
                     .findOne({ beaconId: beaconId });
                 if (beacon) {
-                    // Get tracker
                     const tracker = await this.db
-                        .collection('trackers')
-                        .findOne({ deviceId: deviceId });
+                        .collection('tracker')
+                        .findOne({ DeviceId: deviceId });
                     if (tracker && tracker.TrackerId) {
                         // Get user
                         const user = await this.db
-                            .collection('users')
+                            .collection('user')
                             .findOne({ TrackerId: tracker.TrackerId });
                         if (user && user.CCCD) {
                             // Process history and alarms
@@ -121,7 +120,7 @@ class MQTTWorker {
 
                             // Check history
                             const histories = await this.db
-                                .collection('histories')
+                                .collection('history')
                                 .find({
                                     CCCD: user.CCCD,
                                     DeviceId: deviceId,
@@ -151,11 +150,11 @@ class MQTTWorker {
                             }
 
                             // Check alarm areas
-                            const alarmAreas = await this.db
-                                .collection('alarmAreas')
+                            const alarmArea = await this.db
+                                .collection('alarmArea')
                                 .find()
                                 .toArray();
-                            for (const area of alarmAreas) {
+                            for (const area of alarmArea) {
                                 if (beacon.Floor === area.Floor) {
                                     if (
                                         beacon.x >= area.x_min &&
@@ -176,13 +175,6 @@ class MQTTWorker {
                     }
                 }
             }
-
-            // Send data to parent process
-            process.send({
-                type: 'mqtt_message',
-                topic: topic,
-                data: data,
-            });
         } catch (error) {
             console.error('Error processing MQTT message:', error);
         }
@@ -204,7 +196,7 @@ class MQTTWorker {
         };
 
         const result = await this.db
-            .collection('histories')
+            .collection('history')
             .insertOne(historyObj);
 
         if (result.insertedId) {
@@ -228,7 +220,7 @@ class MQTTWorker {
             Type: 'XÂM NHẬP',
         };
 
-        const result = await this.db.collection('alarms').insertOne(alarmObj);
+        const result = await this.db.collection('alarm').insertOne(alarmObj);
 
         if (result.insertedId) {
             process.send({
@@ -316,6 +308,7 @@ class MQTTWorker {
                 if (this.mongoClient) {
                     this.mongoClient.close();
                 }
+
                 process.exit(0);
                 break;
         }
