@@ -132,8 +132,8 @@ class MQTTWorker {
                             if (histories.length > 0) {
                                 const latest = histories[0];
                                 if (
-                                    latest.Floor !== beacon.Floor ||
-                                    latest.Location !== beacon.Room
+                                    latest.Floor == beacon.Floor ||
+                                    latest.Location == beacon.Room
                                 ) {
                                     await this.createHistory(
                                         user,

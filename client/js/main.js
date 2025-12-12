@@ -92,9 +92,6 @@ const updateDataTrackerAndUsersForUpdateHistory = (history) => {
             ` (${history.Location}) - `;
         document.getElementById(`floor-${history.DeviceId}`).textContent =
             ` (${history.Floor})`;
-        document
-            .getElementById(`tracker-${history.DeviceId}`)
-            .classList.remove('alert-active');
     }
 };
 
@@ -262,6 +259,10 @@ function drawForbiddenAreas() {
 /** Cập nhật vị trí và thông tin của Marker trên bản đồ */
 function updateMapMarker(data) {
     let marker = document.getElementById(`marker-${data.deviceId}`);
+    document
+        .getElementById(`tracker-${data.deviceId}`)
+        ?.classList.remove('alert-active');
+    document.getElementById(`alert-${data.deviceId}`)?.remove();
 
     if (data.floor !== currentFloor) {
         if (marker) marker.remove();
@@ -301,6 +302,8 @@ function updateMapMarker(data) {
         Time: ${new Date().toLocaleTimeString()}
     `;
     marker.querySelector('.tracker-info').innerHTML = infoContent;
+
+    checkForbiddenArea(data);
 }
 
 // =======================================================================
