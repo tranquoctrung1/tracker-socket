@@ -67,7 +67,9 @@ class WebSocketManager {
     }
 
     generateClientId() {
-        return `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `client_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
     }
 
     handleMessage(clientId, message) {
@@ -166,7 +168,13 @@ class WebSocketManager {
                     timestamp: new Date().toISOString(),
                 });
                 break;
-
+            case 'history_created_gps':
+                this.broadcast({
+                    type: 'DATA_UPDATE_HISTORY_GPS',
+                    message: msg.data,
+                    timestamp: new Date().toISOString(),
+                });
+                break;
             case 'alarm_created':
                 this.broadcast({
                     type: 'DATA_UPDATE_ALARM',

@@ -99,6 +99,7 @@ class MQTTWorker {
             // Process the message (your existing logic)
             const deviceId = data.deviceInfo.devEui;
             const beaconId = data.object.ID;
+            const type = data.object.type;
 
             if (beaconId) {
                 // Get beacon
@@ -174,6 +175,31 @@ class MQTTWorker {
                         }
                     }
                 }
+            } else if (type && type === 'GPS') {
+                const tracker = await this.db
+                    .collection('tracker')
+                    .findOne({ DeviceId: deviceId });
+                if (tracker && tracker.TrackerId) {
+                    // Get user
+                    const user = await this.db
+                        .collection('user')
+                        .findOne({ TrackerId: tracker.TrackerId });
+                    if (user && user.CCCD) {
+                        if (
+                            data.object.lat !== undefined &&
+                            data.object.lat !== null &&
+                            data.object.long !== undefined &&
+                            data.object.long !== null
+                        ) {
+                            await this.createHistoryGPS(
+                                user,
+                                deviceId,
+                                data.object.lat,
+                                data.object.long,
+                            );
+                        }
+                    }
+                }
             }
         } catch (error) {
             console.error('Error processing MQTT message:', error);
@@ -181,8 +207,8 @@ class MQTTWorker {
     }
 
     async createHistory(user, deviceId, beacon) {
-        const randomx = Math.floor(Math.random() * 21) - 10;
-        const randomy = Math.floor(Math.random() * 21) - 10;
+        const randomx = Math.floor(Math.random() * 10) - 1;
+        const randomy = Math.floor(Math.random() * 10) - 1;
 
         const historyObj = {
             CCCD: user.CCCD,
@@ -193,6 +219,7 @@ class MQTTWorker {
             Location: beacon.Room,
             x: beacon.x + randomx,
             y: beacon.y + randomy,
+            isGPS: false,
         };
 
         const result = await this.db
@@ -202,6 +229,31 @@ class MQTTWorker {
         if (result.insertedId) {
             process.send({
                 type: 'history_created',
+                data: historyObj,
+            });
+        }
+    }
+
+    async createHistoryGPS(user, deviceId, x, y) {
+        const historyObj = {
+            CCCD: user.CCCD,
+            Name: user.Name,
+            DeviceId: deviceId,
+            TimeStamp: new Date(),
+            Floor: 'Tầng Trệt',
+            Location: '',
+            x: x,
+            y: y,
+            isGPS: true,
+        };
+
+        const result = await this.db
+            .collection('history')
+            .insertOne(historyObj);
+
+        if (result.insertedId) {
+            process.send({
+                type: 'history_created_gps',
                 data: historyObj,
             });
         }

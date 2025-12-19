@@ -85,7 +85,9 @@ class BeaconManager {
         this.showLoading();
         try {
             const response = await fetch(
-                `${API_BASE_URL}/rooms/floor/${document.getElementById('Floor').value || 'Tầng Trệt'}`,
+                `${API_BASE_URL}/rooms/floor/${
+                    document.getElementById('Floor').value || 'Tầng Trệt'
+                }`,
             );
             const data = await response.json();
 
@@ -240,7 +242,7 @@ class BeaconManager {
 
         // Fill form with beacon data
         document.getElementById('beaconId').value = beacon.beaconId;
-        document.getElementById('Floor').value = beacon.Floor;
+        document.getElementById('Floor').value = beacon.Floor || 'Tẩng Trệt';
         document.getElementById('x').value = beacon.x || '';
         document.getElementById('y').value = beacon.y || '';
         document.getElementById('Room').value = beacon.Room || '';

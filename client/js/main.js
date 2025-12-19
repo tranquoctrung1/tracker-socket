@@ -9,8 +9,38 @@ const LOCAL_STORAGE_KEY_COUNTER = 'geofenceAlertCounter'; // Bộ đếm vẫn l
 //const MAP_HEIGHT = 600;
 
 // Hằng số Tọa độ Max linh hoạt theo tầng (Đơn vị: mét)
-const WORLD_COORD_MAX_XY = 450.7;
-const WORLD_COORD_MAX_Y_TRET = 405.0;
+const WORLD_COORD_MAX_XY = 1500;
+const WORLD_COORD_MAX_Y_TRET = 770;
+
+const ROTATE_DEG = 0; // âm = xoay trái
+const ROTATE_RAD = (ROTATE_DEG * Math.PI) / 180;
+
+const IMAGE_NATURAL_SIZE = {
+    width: 579,
+    height: 665,
+};
+
+// Góc trên trái của bản đồ
+const MAP_TOP_LEFT = {
+    lat: 10.912548,
+    lon: 106.586196,
+};
+
+const MAP_TOP_RIGHT = {
+    lat: 10.913049,
+    lon: 106.588877,
+};
+
+// Góc dưới phải của bản đồ
+const MAP_BOTTOM_RIGHT = {
+    lat: 10.908987,
+    lon: 106.590065,
+};
+
+const MAP_BOTTOM_LEFT = {
+    lat: 10.908231,
+    lon: 106.586435,
+};
 
 // Cấu hình Geofencing
 const WARNING_THRESHOLD_METERS = 5; // Cảnh báo sớm khi cách 5m
@@ -51,7 +81,7 @@ const updateTrackerAlarm = (alarm) => {
     updateBellUI(count_alarm);
 };
 
-const updateDataTrackerAndUsersForUpdateHistory = (history) => {
+const updateDataTrackerAndUsersForUpdateHistory = (history, isGPS) => {
     const now = Date.now();
 
     if (liveLocations[history.DeviceId]) {
@@ -75,7 +105,7 @@ const updateDataTrackerAndUsersForUpdateHistory = (history) => {
 
         // 4. HIỂN THỊ MARKER NẾU Ở TẦNG HIỆN TẠI - SỬA LỖI LOGIC FLOOR
         if (updatedTracker.floor === currentFloor) {
-            updateMapMarker(updatedTracker);
+            updateMapMarker(updatedTracker, isGPS);
         } else {
             // Xóa marker nếu không ở tầng hiện tại
             document.getElementById(`marker-${history.DeviceId}`)?.remove();
@@ -88,10 +118,12 @@ const updateDataTrackerAndUsersForUpdateHistory = (history) => {
 
         document.getElementById(`name-${history.DeviceId}`).textContent =
             history.Name;
-        document.getElementById(`room-${history.DeviceId}`).textContent =
-            ` (${history.Location}) - `;
-        document.getElementById(`floor-${history.DeviceId}`).textContent =
-            ` (${history.Floor})`;
+        document.getElementById(
+            `room-${history.DeviceId}`,
+        ).textContent = ` (${history.Location}) - `;
+        document.getElementById(
+            `floor-${history.DeviceId}`,
+        ).textContent = ` (${history.Floor})`;
     }
 };
 
@@ -141,9 +173,14 @@ const updateDataTrackerAndUsers = () => {
             timestamp: now,
         };
 
+        console.log(updatedTracker);
+
         // 4. HIỂN THỊ MARKER NẾU Ở TẦNG HIỆN TẠI - SỬA LỖI LOGIC FLOOR
         if (updatedTracker.floor === currentFloor) {
-            updateMapMarker(updatedTracker);
+            updateMapMarker(
+                updatedTracker,
+                updatedTracker.history[updatedTracker.history.length - 1].isGPS,
+            );
         } else {
             // Xóa marker nếu không ở tầng hiện tại
             document.getElementById(`marker-${item.DeviceId}`)?.remove();
@@ -201,6 +238,98 @@ const FLOOR_COLORS = {
 //                       HÀM CHUYỂN ĐỔI VÀ VẼ
 // =======================================================================
 
+function getImageOffset() {
+    const el = document.getElementById('floor-plan');
+    const rect = el.getBoundingClientRect();
+
+    const rectBody = document.body.getBoundingClientRect();
+
+    const cornersBody = {
+        topLeft: { x: rectBody.left, y: rectBody.top },
+        topRight: { x: rectBody.right, y: rectBody.top },
+        bottomRight: { x: rectBody.right, y: rectBody.bottom },
+        bottomLeft: { x: rectBody.left, y: rectBody.bottom },
+    };
+
+    const corners = {
+        topLeft: { x: rect.left, y: rect.top },
+        topRight: { x: rect.right, y: rect.top },
+        bottomRight: { x: rect.right, y: rect.bottom },
+        bottomLeft: { x: rect.left, y: rect.bottom },
+    };
+
+    const offsetXLeft = corners.topLeft.x - cornersBody.topLeft.x;
+    const offsetYLeft = corners.topLeft.y - cornersBody.topLeft.y;
+
+    const offsetXRight = corners.topRight.x - cornersBody.topRight.x;
+    const offsetYRight = corners.topRight.y - cornersBody.topRight.y;
+
+    const offsetXBottom = corners.bottomRight.x - cornersBody.bottomRight.x;
+    const offsetYBottom = corners.bottomRight.y - cornersBody.bottomRight.y;
+
+    const offsetXTop = corners.bottomLeft.x - cornersBody.bottomLeft.x;
+    const offsetYTop = corners.bottomLeft.y - cornersBody.bottomLeft.y;
+
+    return [
+        {
+            offsetXLeft,
+            offsetYLeft,
+            offsetXRight,
+            offsetYRight,
+            offsetXBottom,
+            offsetYBottom,
+            offsetXTop,
+            offsetYTop,
+        },
+        corners,
+    ];
+}
+
+function latLonToPixel(lat, lon) {
+    const img = document.getElementById('floor-plan');
+    if (!img) return { x: 0, y: 0 };
+
+    // 2️⃣ Scale ảnh gốc → pixel hiển thị
+    const scaleX = img.offsetWidth / IMAGE_NATURAL_SIZE.width;
+    const scaleY = img.offsetHeight / IMAGE_NATURAL_SIZE.height;
+
+    // lat/lon range
+    const latMin = MAP_BOTTOM_LEFT.lat;
+    const latMax = MAP_TOP_RIGHT.lat;
+    const lonMin = MAP_TOP_LEFT.lon;
+    const lonMax = MAP_BOTTOM_RIGHT.lon;
+
+    const offset = getImageOffset();
+
+    // screen range
+    const xMin = offset[1].topLeft.x;
+    const xMax = offset[1].topRight.x;
+    const yMin = offset[1].topLeft.y;
+    const yMax = offset[1].bottomLeft.y;
+
+    // 1️⃣ Map lat/lon → pixel thẳng
+    const x0 = xMin + ((lon - lonMin) / (lonMax - lonMin)) * (xMax - xMin);
+
+    const y0 = yMax - ((lat - latMin) / (latMax - latMin)) * (yMax - yMin);
+
+    // 2️⃣ Tâm ảnh (xoay quanh đây)
+    const cx = (xMin + xMax) / 2;
+    const cy = (yMin + yMax) / 2;
+
+    // 3️⃣ Xoay điểm
+    const angle = (ROTATE_DEG * Math.PI) / 180; // xoay trái 30°
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const dx = x0 - cx;
+    const dy = y0 - cy;
+
+    const x = cx + dx * cos - dy * sin - 50 * scaleX;
+    const y = cy + dx * sin + dy * cos - 60 * scaleY;
+
+    return { x, y };
+}
+
 /** Chuyển đổi tọa độ World (mét) sang Pixel (màn hình) */
 function toPixel(x, y) {
     /* *** CẢI THIỆN: Lấy kích thước từ thẻ <img> floor-plan thay vì container *** */
@@ -243,12 +372,16 @@ function drawForbiddenAreas() {
         const startPixel = toPixel(area.x_min, area.y_max);
         const endPixel = toPixel(area.x_max, area.y_min);
 
+        console.log(startPixel, endPixel);
+
         const div = document.createElement('div');
         div.className = 'forbidden-area-overlay';
         div.style.backgroundColor = area.color;
 
-        div.style.left = `${startPixel.x}px`;
-        div.style.top = `${startPixel.y}px`;
+        //div.style.left = `${startPixel.x}px`;
+        div.style.left = `${area.x_min}px`;
+        //div.style.top = `${startPixel.y}px`;
+        div.style.top = `${area.y_min}px`;
         div.style.width = `${endPixel.x - startPixel.x}px`;
         div.style.height = `${endPixel.y - startPixel.y}px`;
 
@@ -257,7 +390,7 @@ function drawForbiddenAreas() {
 }
 
 /** Cập nhật vị trí và thông tin của Marker trên bản đồ */
-function updateMapMarker(data) {
+function updateMapMarker(data, isGPS) {
     let marker = document.getElementById(`marker-${data.deviceId}`);
     document
         .getElementById(`tracker-${data.deviceId}`)
@@ -270,15 +403,20 @@ function updateMapMarker(data) {
         return;
     }
 
-    const randomx = Math.floor(Math.random() * 31) - 10;
-    const randomy = Math.floor(Math.random() * 31) - 10;
+    const randomx = Math.floor(Math.random() * 10) - 1;
+    const randomy = Math.floor(Math.random() * 10) - 1;
 
-    const pixelPos = toPixel(
-        data.history[data.history.length - 1].x + randomx,
-        data.history[data.history.length - 1].y + randomy,
-        // data.history[data.history.length - 1].x,
-        // data.history[data.history.length - 1].y,
-    );
+    let pixelPos = null;
+    if (isGPS) {
+        const last = data.history[data.history.length - 1];
+        pixelPos = latLonToPixel(last.x, last.y);
+    }
+    // else {
+    //     pixelPos = toPixel(
+    //         data.history[data.history.length - 1].x + randomx,
+    //         data.history[data.history.length - 1].y + randomy,
+    //     );
+    // }
 
     if (!marker) {
         marker = document.createElement('div');
@@ -292,8 +430,25 @@ function updateMapMarker(data) {
     }
 
     marker.style.backgroundColor = data.color || '#dc3545';
-    marker.style.left = `${pixelPos.x - 15}px`;
-    marker.style.top = `${pixelPos.y - 30}px`;
+    if (isGPS) {
+        const img = document.getElementById('floor-plan');
+        const scaleY = img.offsetHeight / IMAGE_NATURAL_SIZE.height;
+
+        if (pixelPos.y <= 265 - 50 * scaleY) {
+            marker.style.left = `${pixelPos.x + 300}px`;
+        } else if (pixelPos.y <= 465 - 50 * scaleY) {
+            marker.style.left = `${pixelPos.x + 150}px`;
+        } else if (pixelPos.y <= 645 - 50 * scaleY) {
+            marker.style.left = `${pixelPos.x + 80}px`;
+        } else {
+            marker.style.left = `${pixelPos.x + 30}px`;
+        }
+
+        marker.style.top = `${pixelPos.y}px`;
+    } else {
+        marker.style.left = `${data.history[data.history.length - 1].x}px`;
+        marker.style.top = `${data.history[data.history.length - 1].y}px`;
+    }
 
     const infoContent = `
         Khách: ${data.guest_name || 'N/A'}<br>

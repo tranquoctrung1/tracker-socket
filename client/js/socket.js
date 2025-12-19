@@ -58,6 +58,10 @@ class WebSocketWorkerManager {
                 // Handle data updates
                 this.updateHistory(message);
                 break;
+            case 'DATA_UPDATE_HISTORY_GPS':
+                // Handle data updates
+                this.updateHistoryGPS(message);
+                break;
             case `DATA_UPDATE_ALARM`:
                 // Handle data updates
                 this.updateAlarm(message);
@@ -86,7 +90,20 @@ class WebSocketWorkerManager {
             if (findIndex !== -1) {
                 trackers_users[findIndex].history.push(data.message);
 
-                updateDataTrackerAndUsersForUpdateHistory(data.message);
+                updateDataTrackerAndUsersForUpdateHistory(data.message, false);
+            }
+        }
+    }
+    updateHistoryGPS(data) {
+        if (data.message !== null && data.message !== undefined) {
+            const findIndex = trackers_users.findIndex(
+                (el) => el.DeviceId === data.message.DeviceId,
+            );
+
+            if (findIndex !== -1) {
+                trackers_users[findIndex].history.push(data.message);
+
+                updateDataTrackerAndUsersForUpdateHistory(data.message, true);
             }
         }
     }
