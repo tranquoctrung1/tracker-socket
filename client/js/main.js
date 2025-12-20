@@ -173,8 +173,6 @@ const updateDataTrackerAndUsers = () => {
             timestamp: now,
         };
 
-        console.log(updatedTracker);
-
         // 4. HIỂN THỊ MARKER NẾU Ở TẦNG HIỆN TẠI - SỬA LỖI LOGIC FLOOR
         if (updatedTracker.floor === currentFloor) {
             updateMapMarker(
@@ -371,8 +369,6 @@ function drawForbiddenAreas() {
         // Lấy góc trên bên trái (x_min, y_max) và góc dưới bên phải (x_max, y_min)
         const startPixel = toPixel(area.x_min, area.y_max);
         const endPixel = toPixel(area.x_max, area.y_min);
-
-        console.log(startPixel, endPixel);
 
         const div = document.createElement('div');
         div.className = 'forbidden-area-overlay';
