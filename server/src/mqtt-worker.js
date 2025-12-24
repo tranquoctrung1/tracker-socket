@@ -98,15 +98,85 @@ class MQTTWorker {
 
             // Process the message (your existing logic)
             const deviceId = data.deviceInfo.devEui;
-            const beaconId = data.object.ID;
-            const type = data.object.type;
+            if (data.object !== null && data.object !== undefined) {
+                const beaconId = data.object.ID;
+                const type = data.object.type;
 
-            if (beaconId) {
-                // Get beacon
-                const beacon = await this.db
-                    .collection('beacon')
-                    .findOne({ beaconId: beaconId });
-                if (beacon) {
+                if (beaconId) {
+                    // Get beacon
+                    const beacon = await this.db
+                        .collection('beacon')
+                        .findOne({ beaconId: beaconId });
+                    if (beacon) {
+                        const tracker = await this.db
+                            .collection('tracker')
+                            .findOne({ DeviceId: deviceId });
+                        if (tracker && tracker.TrackerId) {
+                            // Get user
+                            const user = await this.db
+                                .collection('user')
+                                .findOne({ TrackerId: tracker.TrackerId });
+                            if (user && user.CCCD) {
+                                // Process history and alarms
+                                const now = new Date();
+
+                                // Check history
+                                const histories = await this.db
+                                    .collection('history')
+                                    .find({
+                                        CCCD: user.CCCD,
+                                        DeviceId: deviceId,
+                                        TimeStamp: { $gte: user.DateCheckIn },
+                                    })
+                                    .sort({ TimeStamp: -1 })
+                                    .toArray();
+
+                                if (histories.length > 0) {
+                                    const latest = histories[0];
+                                    if (
+                                        latest.Floor == beacon.Floor ||
+                                        latest.Location == beacon.Room
+                                    ) {
+                                        await this.createHistory(
+                                            user,
+                                            deviceId,
+                                            beacon,
+                                        );
+                                    }
+                                } else {
+                                    await this.createHistory(
+                                        user,
+                                        deviceId,
+                                        beacon,
+                                    );
+                                }
+
+                                // Check alarm areas
+                                const alarmArea = await this.db
+                                    .collection('alarmArea')
+                                    .find()
+                                    .toArray();
+                                for (const area of alarmArea) {
+                                    if (beacon.Floor === area.Floor) {
+                                        if (
+                                            beacon.x >= area.x_min &&
+                                            beacon.x <= area.x_max &&
+                                            beacon.y >= area.y_min &&
+                                            beacon.y <= area.y_max
+                                        ) {
+                                            await this.createAlarm(
+                                                user,
+                                                tracker,
+                                                beaconId,
+                                                beacon,
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (type && type === 'GPS') {
                     const tracker = await this.db
                         .collection('tracker')
                         .findOne({ DeviceId: deviceId });
@@ -116,87 +186,19 @@ class MQTTWorker {
                             .collection('user')
                             .findOne({ TrackerId: tracker.TrackerId });
                         if (user && user.CCCD) {
-                            // Process history and alarms
-                            const now = new Date();
-
-                            // Check history
-                            const histories = await this.db
-                                .collection('history')
-                                .find({
-                                    CCCD: user.CCCD,
-                                    DeviceId: deviceId,
-                                    TimeStamp: { $gte: user.DateCheckIn },
-                                })
-                                .sort({ TimeStamp: -1 })
-                                .toArray();
-
-                            if (histories.length > 0) {
-                                const latest = histories[0];
-                                if (
-                                    latest.Floor == beacon.Floor ||
-                                    latest.Location == beacon.Room
-                                ) {
-                                    await this.createHistory(
-                                        user,
-                                        deviceId,
-                                        beacon,
-                                    );
-                                }
-                            } else {
-                                await this.createHistory(
+                            if (
+                                data.object.lat !== undefined &&
+                                data.object.lat !== null &&
+                                data.object.long !== undefined &&
+                                data.object.long !== null
+                            ) {
+                                await this.createHistoryGPS(
                                     user,
                                     deviceId,
-                                    beacon,
+                                    data.object.lat,
+                                    data.object.long,
                                 );
                             }
-
-                            // Check alarm areas
-                            const alarmArea = await this.db
-                                .collection('alarmArea')
-                                .find()
-                                .toArray();
-                            for (const area of alarmArea) {
-                                if (beacon.Floor === area.Floor) {
-                                    if (
-                                        beacon.x >= area.x_min &&
-                                        beacon.x <= area.x_max &&
-                                        beacon.y >= area.y_min &&
-                                        beacon.y <= area.y_max
-                                    ) {
-                                        await this.createAlarm(
-                                            user,
-                                            tracker,
-                                            beaconId,
-                                            beacon,
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else if (type && type === 'GPS') {
-                const tracker = await this.db
-                    .collection('tracker')
-                    .findOne({ DeviceId: deviceId });
-                if (tracker && tracker.TrackerId) {
-                    // Get user
-                    const user = await this.db
-                        .collection('user')
-                        .findOne({ TrackerId: tracker.TrackerId });
-                    if (user && user.CCCD) {
-                        if (
-                            data.object.lat !== undefined &&
-                            data.object.lat !== null &&
-                            data.object.long !== undefined &&
-                            data.object.long !== null
-                        ) {
-                            await this.createHistoryGPS(
-                                user,
-                                deviceId,
-                                data.object.lat,
-                                data.object.long,
-                            );
                         }
                     }
                 }
