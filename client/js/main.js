@@ -175,10 +175,13 @@ const updateDataTrackerAndUsers = () => {
 
         // 4. HIỂN THỊ MARKER NẾU Ở TẦNG HIỆN TẠI - SỬA LỖI LOGIC FLOOR
         if (updatedTracker.floor === currentFloor) {
-            updateMapMarker(
-                updatedTracker,
-                updatedTracker.history[updatedTracker.history.length - 1].isGPS,
-            );
+            if (updatedTracker.history.length > 0) {
+                updateMapMarker(
+                    updatedTracker,
+                    updatedTracker.history[updatedTracker.history.length - 1]
+                        .isGPS,
+                );
+            }
         } else {
             // Xóa marker nếu không ở tầng hiện tại
             document.getElementById(`marker-${item.DeviceId}`)?.remove();

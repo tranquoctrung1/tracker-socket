@@ -7,7 +7,7 @@ const reconnectDelay = 3000;
 function connectWebSocket() {
     try {
         // Replace with your actual WebSocket server URL
-        ws = new WebSocket(`ws://157.66.81.22:3008`);
+        ws = new WebSocket(`ws://192.168.1.7:5554`);
 
         ws.onopen = function (event) {
             console.log('WebSocket connected in worker');

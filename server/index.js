@@ -40,7 +40,6 @@ async function startServer() {
 
         // Xử lý messages từ MQTT worker
         mqttWorker.on('message', (msg) => {
-            console.log(msg);
             // Forward message to socket manager
             socketManager.handleMqttMessage(msg);
 
